@@ -40,6 +40,9 @@ spec:
     - name: vol-05-output
       hostPath:
         path: /home/rkt/data/movies/05_to_arangodb_graph/output
+    - name: vol-05-code
+      hostPath:
+        path: /home/rkt/data/movies/05_to_arangodb_graph/code
     - name: vol-05-transformation
       hostPath:
         path: /home/rkt/data/movies/05_to_arangodb_graph/transformation
@@ -101,7 +104,7 @@ spec:
       container:
         image: yareddej/movies_05_to_arangodb_graph:latest
         command: [bash]
-        args: ["/run.sh", "/input", "/work", "/output", "/transformation/transformation.json"]
+        args: ["/run.sh", "/input", "/work", "/output","/code", "/transformation/transformation.json"]
         volumeMounts:
           - mountPath: /input
             name: vol-04-output # Output of Step 4
@@ -109,6 +112,8 @@ spec:
             name: vol-05-work
           - mountPath: /output
             name: vol-05-output
+          - mountPath: /code
+            name: vol-05-code
           - mountPath: /transformation
             name: vol-05-transformation
 
