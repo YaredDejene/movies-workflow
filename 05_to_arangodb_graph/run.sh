@@ -2,6 +2,8 @@
 # arg1: input directory
 # arg2: work directory
 # arg3: output directory
+# arg4: code directory
+# arg5: transformation json directory
 
 input_directory=${1}
 work_directory=${2}
@@ -32,7 +34,7 @@ if [ "${nfiles}" -gt "0" ]; then
 fi
 
 # Move the files to output
-#./move_to_output.sh ${output_directory} ${work_directory}/*
+./move_to_output.sh ${output_directory} ${work_directory}/*
 
 # Cleanup
-#rm -rf ${work_directory}/*
+rm -rf ${work_directory}/*
