@@ -1,0 +1,127 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: movies-wf-
+spec:
+  entrypoint: movies-workflow
+  volumes:
+    #Volumes of step 1
+    - name: vol-01-output
+      hostPath:
+        path: /home/rkt/data/movies/01_fetch_raw_data/output
+    #Volumes of step 2
+    - name: vol-02-work
+      hostPath:
+        path: /home/rkt/data/movies/02_unzip/work
+    - name: vol-02-output
+      hostPath:
+        path: /home/rkt/data/movies/02_unzip/output
+    #Volumes of step 3
+    - name: vol-03-work
+      hostPath:
+        path: /home/rkt/data/movies/03_csv_formating/work
+    - name: vol-03-output
+      hostPath:
+        path: /home/rkt/data/movies/03_csv_formating/output
+    #Volumes of step 4
+    - name: vol-04-work
+      hostPath:
+        path: /home/rkt/data/movies/04_clean_files/work
+    - name: vol-04-output
+      hostPath:
+        path: /home/rkt/data/movies/04_clean_files/output
+    - name: vol-04-transformation
+      hostPath:
+        path: /home/rkt/data/movies/04_clean_files/transformation
+    #Volumes of step 5
+    - name: vol-05-work
+      hostPath:
+        path: /home/rkt/data/movies/05_to_arangodb_graph/work
+    - name: vol-05-output
+      hostPath:
+        path: /home/rkt/data/movies/05_to_arangodb_graph/output
+    - name: vol-05-transformation
+      hostPath:
+        path: /home/rkt/data/movies/05_to_arangodb_graph/transformation
+
+  templates:
+    #Step 1
+    - name: 01-fetch-raw-data
+      container:
+        image: yareddej/movies_01_fetch_raw_data:latest
+        command: [bash]
+        args: ["/run.sh", "/output"]
+        volumeMounts:
+          - mountPath: /output
+            name: vol-01-output
+    #Step 2
+    - name: 02-unzip
+      container:
+        image: yareddej/movies_02_unzip:latest
+        command: [bash]
+        args: ["/run.sh", "/input", "/work", "/output"]
+        volumeMounts:
+          - mountPath: /input
+            name: vol-01-output # Output of Step 1
+          - mountPath: /work
+            name: vol-02-work
+          - mountPath: /output
+            name: vol-02-output
+    #Step 3
+    - name: 03-csv-formating
+      container:
+        image: yareddej/movies_03_csv_formating:latest
+        command: [bash]
+        args: ["/run.sh", "/input", "/work", "/output"]
+        volumeMounts:
+          - mountPath: /input
+            name: vol-02-output # Output of Step 2
+          - mountPath: /work
+            name: vol-03-work
+          - mountPath: /output
+            name: vol-03-output
+      #Step 4
+    #Step 4
+    - name: 04-clean-files
+      container:
+        image: yareddej/movies_04_clean_files:latest
+        command: [bash]
+        args: ["/run.sh", "/input", "/work", "/output", "/transformation/transformation.jar"]
+        volumeMounts:
+          - mountPath: /input
+            name: vol-03-output # Output of Step 3
+          - mountPath: /work
+            name: vol-04-work
+          - mountPath: /output
+            name: vol-04-output
+          - mountPath: /transformation
+            name: vol-04-transformation
+    #Step 5
+    - name: 05-to-arangodb-graph
+      container:
+        image: yareddej/movies_05_to_arangodb_graph:latest
+        command: [bash]
+        args: ["/run.sh", "/input", "/work", "/output", "/transformation/transformation.json"]
+        volumeMounts:
+          - mountPath: /input
+            name: vol-04-output # Output of Step 4
+          - mountPath: /work
+            name: vol-05-work
+          - mountPath: /output
+            name: vol-05-output
+          - mountPath: /transformation
+            name: vol-05-transformation
+
+    # Entrypoint
+    - name: movies-workflow
+      steps:
+        - - name: fetch-raw-data
+            template: 01-fetch-raw-data
+        - - name: unzip
+            template: 02-unzip
+        - - name: csv-formating
+            template: 03-csv-formating
+        - - name: clean-files
+            template: 04-clean-files
+        - - name: to-arangodb-graph
+            template: 05-to-arangodb-graph
